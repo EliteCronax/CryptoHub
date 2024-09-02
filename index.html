@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CryptoHub</title>
+    <title>CryptoHub - Advanced Trading Platform</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body {
             background-color: #0a0a0a;
             color: #00ff00;
-            font-family: Consolas, 'Courier New', Courier, monospace;
+            font-family: 'Courier New', Courier, monospace;
             margin: 0;
             padding: 20px;
             overflow-x: hidden;
@@ -62,18 +63,71 @@
             width: 100%;
             margin-bottom: 20px;
         }
+        #news-ticker {
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid #00ff00;
+            padding: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        #news-ticker span {
+            display: inline-block;
+            padding-left: 100%;
+            animation: ticker 30s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+        #crypto-globe {
+            width: 100%;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+        .trading-panel {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .trading-form {
+            flex: 1;
+            margin-right: 20px;
+        }
+        .order-book {
+            flex: 1;
+        }
+        input, select, button {
+            background-color: #0a0a0a;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        button {
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #00ff00;
+            color: #0a0a0a;
+        }
     </style>
 </head>
 <body>
     <canvas id="matrix"></canvas>
     <div class="container">
-        <h1>CryptoHub</h1>
+        <h1>CryptoHub - Advanced Trading Platform</h1>
         <div class="terminal">
             <p>> Initializing secure connection...</p>
             <p>> Access granted</p>
             <p>> Welcome to the underground stock trading network</p>
             <p class="blink">> _</p>
         </div>
+        
+        <div id="news-ticker">
+            <span>Breaking: Bitcoin surges past $50,000 | Ethereum 2.0 launch imminent | SEC approves first crypto ETF | China bans crypto mining | Elon Musk tweets about Dogecoin again</span>
+        </div>
+
         <h2>Live Stock Prices</h2>
         <table id="stockTable">
             <tr>
@@ -83,17 +137,49 @@
                 <th>Volume</th>
             </tr>
         </table>
+
         <div class="chart-container">
             <canvas id="stockChart"></canvas>
         </div>
+
+        <h2>Global Crypto Activity</h2>
+        <div id="crypto-globe"></div>
+
+        <h2>Trading Panel</h2>
+        <div class="trading-panel">
+            <div class="trading-form">
+                <h3>Place Order</h3>
+                <select id="trade-type">
+                    <option value="buy">Buy</option>
+                    <option value="sell">Sell</option>
+                </select>
+                <input type="text" id="trade-symbol" placeholder="Symbol">
+                <input type="number" id="trade-amount" placeholder="Amount">
+                <input type="number" id="trade-price" placeholder="Price">
+                <button onclick="placeOrder()">Place Order</button>
+            </div>
+            <div class="order-book">
+                <h3>Order Book</h3>
+                <table id="orderBookTable">
+                    <tr>
+                        <th>Type</th>
+                        <th>Symbol</th>
+                        <th>Amount</th>
+                        <th>Price</th>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
         <div class="terminal">
             <p>> Executing trade algorithm...</p>
             <p>> Analyzing market trends...</p>
             <p id="recommendation" class="blink">> _</p>
         </div>
     </div>
+
     <script>
-        // Matrix background effect
+        // Matrix background effect 
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
 
@@ -134,7 +220,7 @@
             canvas.height = window.innerHeight;
         });
 
-        // Stock data and chart
+        // Stock data and chart 
         const apiKey = 'O98CYAWSSJ2TV7TF'; 
         const symbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN'];
         const stockTable = document.getElementById('stockTable');
@@ -213,6 +299,57 @@
             document.getElementById('recommendation').textContent = `> Recommendation: ${randomAction} ${randomSymbol}`;
         }
 
+        updateStockTable();
+        updateStockChart();
+        generateRecommendation();
+
+        // 3D Crypto Globe
+        function initCryptoGlobe() {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, 400);
+            document.getElementById('crypto-globe').appendChild(renderer.domElement);
+
+            const geometry = new THREE.SphereGeometry(5, 32, 32);
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+            const globe = new THREE.Mesh(geometry, material);
+            scene.add(globe);
+
+            camera.position.z = 10;
+
+            function animate() {
+                requestAnimationFrame(animate);
+                globe.rotation.x += 0.01;
+                globe.rotation.y += 0.01;
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        initCryptoGlobe();
+
+        // Trading Panel
+        function placeOrder() {
+            const type = document.getElementById('trade-type').value;
+            const symbol = document.getElementById('trade-symbol').value;
+            const amount = document.getElementById('trade-amount').value;
+            const price = document.getElementById('trade-price').value;
+
+            const orderBookTable = document.getElementById('orderBookTable');
+            const row = orderBookTable.insertRow(-1);
+            row.insertCell(0).textContent = type;
+            row.insertCell(1).textContent = symbol;
+            row.insertCell(2).textContent = amount;
+            row.insertCell(3).textContent = price;
+
+            // Clear input fields
+            document.getElementById('trade-symbol').value = '';
+            document.getElementById('trade-amount').value = '';
+            document.getElementById('trade-price').value = '';
+        }
+
+        // Call existing functions
         updateStockTable();
         updateStockChart();
         generateRecommendation();
