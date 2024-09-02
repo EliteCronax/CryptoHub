@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoHub</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        h1, h2 {
+            text-align: center;
+            text-transform: uppercase;
+        }
+        .terminal {
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid #00ff00;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .blink {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #00ff00;
+            padding: 10px;
+            text-align: left;
+        }
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    <div class="container">
+        <h1>H4CK3R_HUB</h1>
+        <div class="terminal">
+            <p>> Initializing secure connection...</p>
+            <p>> Access granted</p>
+            <p>> Welcome to the underground stock trading network</p>
+            <p class="blink">> _</p>
+        </div>
+        <h2>Live Stock Prices</h2>
+        <table id="stockTable">
+            <tr>
+                <th>Symbol</th>
+                <th>Price (USD)</th>
+                <th>Change</th>
+                <th>Volume</th>
+            </tr>
+        </table>
+        <div class="chart-container">
+            <canvas id="stockChart"></canvas>
+        </div>
+        <div class="terminal">
+            <p>> Executing trade algorithm...</p>
+            <p>> Analyzing market trends...</p>
+            <p id="recommendation" class="blink">> _</p>
+        </div>
+    </div>
+    <script>
+        // Matrix background effect
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
+        const fontSize = 10;
+        const columns = canvas.width / fontSize;
+
+        const drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = 1;
+        }
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#0f0';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = characters.charAt(Math.floor(Math.random() * characters.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(draw, 33);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Stock data and chart
+        const apiKey = 'O98CYAWSSJ2TV7TF'; 
+        const symbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN'];
+        const stockTable = document.getElementById('stockTable');
+        const chartCtx = document.getElementById('stockChart').getContext('2d');
+        let stockChart;
+
+        async function fetchStockData(symbol) {
+            const response = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`);
+            const data = await response.json();
+            return data['Global Quote'];
+        }
+
+        async function updateStockTable() {
+            for (const symbol of symbols) {
+                const stockData = await fetchStockData(symbol);
+                if (stockData) {
+                    const row = stockTable.insertRow(-1);
+                    row.insertCell(0).textContent = stockData['01. symbol'];
+                    row.insertCell(1).textContent = `$${parseFloat(stockData['05. price']).toFixed(2)}`;
+                    row.insertCell(2).textContent = `${stockData['10. change percent']}`;
+                    row.insertCell(3).textContent = stockData['06. volume'];
+                }
+            }
+        }
+
+        async function updateStockChart() {
+            const symbol = symbols[0]; // Use the first symbol for the chart
+            const response = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${apiKey}`);
+            const data = await response.json();
+            const timeSeriesData = data['Time Series (Daily)'];
+
+            const dates = Object.keys(timeSeriesData).slice(0, 30).reverse();
+            const prices = dates.map(date => parseFloat(timeSeriesData[date]['4. close']));
+
+            if (stockChart) {
+                stockChart.destroy();
+            }
+
+            stockChart = new Chart(chartCtx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: `${symbol} Stock Price`,
+                        data: prices,
+                        borderColor: '#00ff00',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: { color: '#00ff00' },
+                            grid: { color: '#003300' }
+                        },
+                        y: {
+                            ticks: { color: '#00ff00' },
+                            grid: { color: '#003300' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#00ff00' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateRecommendation() {
+            const actions = ['BUY', 'SELL', 'HOLD'];
+            const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+            const randomAction = actions[Math.floor(Math.random() * actions.length)];
+            document.getElementById('recommendation').textContent = `> Recommendation: ${randomAction} ${randomSymbol}`;
+        }
+
+        updateStockTable();
+        updateStockChart();
+        generateRecommendation();
+
+        // Update data every 5 minutes
+        setInterval(() => {
+            stockTable.innerHTML = '<tr><th>Symbol</th><th>Price (USD)</th><th>Change</th><th>Volume</th></tr>';
+            updateStockTable();
+            updateStockChart();
+            generateRecommendation();
+        }, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
